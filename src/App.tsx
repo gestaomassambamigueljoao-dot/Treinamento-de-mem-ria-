@@ -161,56 +161,59 @@ export default function App() {
     };
   }, [currentScreen]);
 
-  // Load Wistia scripts and handle video events
+  // Preload Wistia scripts and styles immediately on mount so they are fully ready in cache
+  useEffect(() => {
+    // 1. Inject Wistia Stylesheet for non-defined custom player
+    const styleId = "wistia-player-styles";
+    let styleElement = document.getElementById(styleId);
+    if (!styleElement) {
+      styleElement = document.createElement("style");
+      styleElement.id = styleId;
+      styleElement.innerHTML = `
+        wistia-player[media-id='7i8ufihqb8']:not(:defined) {
+          background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/7i8ufihqb8/swatch');
+          display: block;
+          filter: blur(5px);
+          padding-top: 100.0%;
+        }
+      `;
+      document.head.appendChild(styleElement);
+    }
+
+    // 2. Load Wistia Main Player JS
+    const playerScriptId = "wistia-player-js";
+    if (!document.getElementById(playerScriptId)) {
+      const script = document.createElement("script");
+      script.id = playerScriptId;
+      script.src = "https://fast.wistia.com/player.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    // 3. Load Wistia Specific Video Embed JS
+    const embedScriptId = "wistia-embed-js";
+    if (!document.getElementById(embedScriptId)) {
+      const script = document.createElement("script");
+      script.id = embedScriptId;
+      script.src = "https://fast.wistia.com/embed/7i8ufihqb8.js";
+      script.async = true;
+      script.type = "module";
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Handle video events and auto-start playing when screen is "vsl"
   useEffect(() => {
     if (currentScreen === "vsl") {
       setVslCompleted(false);
       setShowSkipFallback(false);
 
-      // Show fallback skip link after 6 seconds
+      // Show fallback skip link after 4 seconds
       const fallbackTimer = setTimeout(() => {
         setShowSkipFallback(true);
-      }, 6000);
+      }, 4000);
 
-      // 1. Inject Wistia Stylesheet for non-defined custom player
-      const styleId = "wistia-player-styles";
-      let styleElement = document.getElementById(styleId);
-      if (!styleElement) {
-        styleElement = document.createElement("style");
-        styleElement.id = styleId;
-        styleElement.innerHTML = `
-          wistia-player[media-id='7i8ufihqb8']:not(:defined) {
-            background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/7i8ufihqb8/swatch');
-            display: block;
-            filter: blur(5px);
-            padding-top: 100.0%;
-          }
-        `;
-        document.head.appendChild(styleElement);
-      }
-
-      // 2. Load Wistia Main Player JS
-      const playerScriptId = "wistia-player-js";
-      if (!document.getElementById(playerScriptId)) {
-        const script = document.createElement("script");
-        script.id = playerScriptId;
-        script.src = "https://fast.wistia.com/player.js";
-        script.async = true;
-        document.body.appendChild(script);
-      }
-
-      // 3. Load Wistia Specific Video Embed JS
-      const embedScriptId = "wistia-embed-js";
-      if (!document.getElementById(embedScriptId)) {
-        const script = document.createElement("script");
-        script.id = embedScriptId;
-        script.src = "https://fast.wistia.com/embed/7i8ufihqb8.js";
-        script.async = true;
-        script.type = "module";
-        document.body.appendChild(script);
-      }
-
-      // 4. Setup callbacks safely
+      // Setup callbacks safely
       const handlePlay = () => setVslPlaying(true);
       const handlePause = () => setVslPlaying(false);
       const handleEnd = () => {
@@ -226,6 +229,12 @@ export default function App() {
           video.bind("play", handlePlay);
           video.bind("pause", handlePause);
           video.bind("end", handleEnd);
+          // Auto-play immediately as soon as ready!
+          try {
+            video.play();
+          } catch (e) {
+            console.log("Auto-play blocked, waiting for user play interaction", e);
+          }
         }
       });
       wq.push({
@@ -235,12 +244,15 @@ export default function App() {
             video.bind("play", handlePlay);
             video.bind("pause", handlePause);
             video.bind("end", handleEnd);
+            try {
+              video.play();
+            } catch (e) {}
           }
         }
       });
       (window as any)._wq = wq;
 
-      // 5. Safe polling using only the custom element's public getApi method (no global Wistia.api calls)
+      // Safe polling using only the custom element's public getApi method (no global Wistia.api calls)
       let active = true;
       let isBound = false;
 
@@ -253,6 +265,9 @@ export default function App() {
             video.bind("play", handlePlay);
             video.bind("pause", handlePause);
             video.bind("end", handleEnd);
+            try {
+              video.play();
+            } catch (e) {}
           }).catch(() => {});
           return true; // successfully triggered binding promise
         }
@@ -278,7 +293,7 @@ export default function App() {
           isBound = true;
           clearInterval(pollingInterval);
         }
-      }, 1000);
+      }, 300); // Poll faster (300ms) to ensure instant play
 
       return () => {
         active = false;
@@ -745,7 +760,7 @@ export default function App() {
                     className="w-full relative bg-black rounded-3xl"
                     dangerouslySetInnerHTML={{
                       __html: `
-                        <wistia-player media-id="7i8ufihqb8" aspect="1.0">
+                        <wistia-player media-id="7i8ufihqb8" aspect="1.0" autoPlay="true" playbar="true">
                           <div class="wistia_preload_transcript_outer_wrapper" style="width: 100%; height: 100%; display:flex; justify-content:center; align-items: center; margin-top:-100.0%;">
                             <div class="wistia_preload_transcript_inner_wrapper" style=" overflow: auto;">
                               <p class="wistia_preload_transcript_text" aria-hidden="true" tabindex="-1" style="text-align: justify; font-size: 5px !important;"> </p>
@@ -1062,7 +1077,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="space-y-10 pb-12"
+                className="space-y-8 pb-12"
               >
                 
                 {/* Title and Badge section */}
@@ -1071,233 +1086,226 @@ export default function App() {
                     <Award className="w-4 h-4 text-amber-500" />
                     <span>Plano Personalizado Gerado</span>
                   </div>
-                  <h1 className="font-bold text-3xl md:text-4xl text-blue-950 tracking-tight">
-                    O SEU PLANO: PLANO DE TREINAMENTO DE MEMÓRIA ATIVA 30 DIAS
+                  <h1 className="font-bold text-2xl md:text-3xl text-blue-950 tracking-tight max-w-xl mx-auto uppercase leading-tight">
+                    Plano de Treinamento de Memória Ativa 30 Dias
                   </h1>
-                  <p className="text-slate-500 text-sm max-w-lg mx-auto leading-relaxed">
-                    Criado especificamente com base no seu perfil de <span className="font-bold text-blue-950">&ldquo;{profile?.name}&rdquo;</span>.
+                  <p className="text-slate-500 text-xs md:text-sm max-w-lg mx-auto leading-relaxed">
+                    Desenvolvido exclusivamente com base no seu perfil de <span className="font-bold text-blue-950">&ldquo;{profile?.name}&rdquo;</span> para otimizar o seu desempenho cognitivo.
                   </p>
                 </div>
 
-                {/* Product Box presentation */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/80 space-y-6">
-                  
-                  {/* Mockup do Plano de Treinamento */}
-                  <div className="bg-slate-50 border border-slate-100/80 p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center gap-4">
-                    <div className="relative max-w-xs md:max-w-sm mx-auto overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg transition-transform hover:scale-[1.02] duration-300">
-                      <img
-                        src="https://lh3.googleusercontent.com/d/1ZgThWQIjYn04IrZ0wBlq20uTgy15yJnT"
-                        alt="Mockup do Plano de Treinamento de Memória Ativa"
-                        className="w-full h-auto object-cover"
-                        referrerPolicy="no-referrer"
-                      />
+                {/* Main Offer Card: Mockup on the Left, Core Info on the Right */}
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50 overflow-hidden">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
+                    
+                    {/* Left side: Premium Mockup Area */}
+                    <div className="md:col-span-5 bg-slate-50 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
+                      <div className="relative max-w-[160px] md:max-w-full mx-auto overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md transition-transform hover:scale-[1.02] duration-300">
+                        <img
+                          src="https://lh3.googleusercontent.com/d/1ZgThWQIjYn04IrZ0wBlq20uTgy15yJnT"
+                          alt="Mockup do Plano de Treinamento de Memória Ativa"
+                          className="w-full h-auto object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="text-center mt-3">
+                        <span className="text-[10px] uppercase font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full tracking-wider">
+                          Acesso Digital Imediato
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-center space-y-1">
-                      <h4 className="font-bold text-sm text-blue-950">Plano de Treinamento Personalizado</h4>
-                      <p className="text-[11px] text-slate-500">Desenvolvido sob medida para otimizar o seu desempenho cognitivo.</p>
+
+                    {/* Right side: Summary & Included Materials */}
+                    <div className="md:col-span-7 p-6 md:p-8 flex flex-col justify-between space-y-6">
+                      <div className="space-y-3">
+                        <span className="text-[9px] uppercase font-bold text-slate-400 tracking-widest block">Treino Sob Medida</span>
+                        <h3 className="font-bold text-lg md:text-xl text-blue-950">
+                          O que está incluído no seu plano:
+                        </h3>
+                        <p className="text-slate-600 text-xs md:text-sm leading-relaxed">
+                          Uma metodologia prática passo a passo, focada em resolver exatamente as dificuldades indicadas nas suas respostas: foco rápido, memorização duradoura e mitigação de lapsos.
+                        </p>
+                      </div>
+
+                      <div className="space-y-3 pt-2">
+                        <div className="space-y-2.5">
+                          {[
+                            "Treinamento de memória estruturado para 30 dias",
+                            "12 exercícios de alta fixação para o cotidiano",
+                            "Protocolo de repetição espaçada e associação",
+                            "Checklist diário de evolução cognitiva"
+                          ].map((feature, fIdx) => (
+                            <div key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700">
+                              <Check className="w-4.5 h-4.5 text-emerald-600 shrink-0 mt-0.5 stroke-[2.5]" />
+                              <span>{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+
                   </div>
+                </div>
 
-                  <p className="text-slate-600 text-sm leading-relaxed font-normal">
-                    Com base nas suas respostas, este plano foi desenhado para trabalhar exatamente os pontos que identificou como mais desafiantes: retenção de informação, concentração e consolidação de memória a longo prazo.
-                  </p>
-
-                  {/* Bullet features */}
-                  <div className="space-y-4 pt-2">
-                    <h4 className="font-bold text-slate-900 text-sm uppercase tracking-wider">
-                      O que vai receber:
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Benefits & Bonus: Side-by-side Layout to avoid vertical scroll clutter */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* Core Benefits */}
+                  <div className="bg-slate-50/60 p-6 rounded-2xl border border-slate-100 space-y-4">
+                    <h3 className="font-bold text-xs tracking-wider uppercase text-blue-950 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      <span>Benefícios Principais</span>
+                    </h3>
+                    <div className="space-y-3 text-xs text-slate-700">
                       {[
-                        "Plano de treino de memória de 30 dias completo",
-                        "12 exercícios práticos, passo a passo",
-                        "Técnicas de repetição espaçada aplicadas ao seu dia a dia",
-                        "Estratégias de associação e mapas mentais",
-                        "Guia de hábitos para manter a mente ativa",
-                        "Checklist diário de progresso"
-                      ].map((feature, fIdx) => (
-                        <div key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-blue-600 shrink-0 mt-0.5" />
-                          <span>{feature}</span>
+                        "Reter informações importantes com menos esforço",
+                        "Estudar, planejar ou trabalhar com mais foco",
+                        "Reduzir a insegurança de esquecer dados na hora H",
+                        "Ganhar mais agilidade mental no dia a dia"
+                      ].map((benefit, bIdx) => (
+                        <div key={bIdx} className="flex items-center gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                          <span>{benefit}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
 
-                {/* THE CORE BENEFITS SECTION */}
-                <div className="bg-slate-50 p-6 md:p-8 rounded-3xl border border-slate-100 space-y-4">
-                  <h3 className="font-bold text-lg text-blue-950">BENEFÍCIOS</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
-                    <div className="flex items-center gap-2 bg-white p-3.5 rounded-xl border border-slate-100">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
-                      <span>Reter mais informação com menos esforço</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white p-3.5 rounded-xl border border-slate-100">
-                      <BookOpen className="w-4 h-4 text-blue-600" />
-                      <span>Estudar ou trabalhar com mais eficiência</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white p-3.5 rounded-xl border border-slate-100">
-                      <ShieldCheck className="w-4 h-4 text-blue-600" />
-                      <span>Reduzir a ansiedade de &ldquo;esquecer na hora H&rdquo;</span>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white p-3.5 rounded-xl border border-slate-100">
-                      <CheckSquare className="w-4 h-4 text-blue-600" />
-                      <span>Ganhar mais confiança no dia a dia</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white p-3.5 rounded-xl border border-slate-100 text-xs text-slate-700">
-                    <CheckSquare className="w-4 h-4 text-blue-600" />
-                    <span>Desenvolver hábitos cognitivos duradouros</span>
-                  </div>
-                </div>
-
-                {/* BONUS INCENTIVES CARD */}
-                <div className="bg-[#FAF9F6] p-6 md:p-8 rounded-3xl border border-[#ECE8DE] space-y-4">
-                  <h3 className="font-bold text-base md:text-lg text-slate-900 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-500" />
-                    <span>🎁 Bónus Exclusivos (Hoje)</span>
-                  </h3>
-
-                  <div className="space-y-3 text-xs text-slate-700">
-                    <div className="flex items-start gap-3 bg-white p-4 rounded-xl border border-[#ECE8DE] shadow-xs">
-                      <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg font-bold">GUIA</span>
-                      <div>
-                        <h4 className="font-bold text-slate-900">BÓNUS 1: Guia Rápido de Técnicas de Concentração</h4>
-                        <p className="text-slate-500 text-[11px] mt-0.5">Técnicas físicas para centrar o foco em menos de 60 segundos.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 bg-white p-4 rounded-xl border border-[#ECE8DE] shadow-xs">
-                      <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg font-bold">LIST</span>
-                      <div>
-                        <h4 className="font-bold text-slate-900">BÓNUS 2: Checklist de Hábitos para uma Mente Mais Ativa</h4>
-                        <p className="text-slate-500 text-[11px] mt-0.5">Organização visual com pequenas rotinas práticas diárias.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* GUARANTEE COMPLIANCE */}
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/60 flex items-start gap-3.5 max-w-md mx-auto">
-                  <ShieldCheck className="w-8 h-8 text-emerald-600 shrink-0" />
-                  <div className="space-y-1 text-xs">
-                    <h4 className="font-bold text-slate-900">Garantia Incondicional de Satisfação</h4>
-                    <p className="text-slate-500 leading-relaxed">
-                      São 7 dias de garantia integral. Se achar que o treino não é indicado ao seu perfil, reembolsamos o seu dinheiro.
-                    </p>
-                  </div>
-                </div>
-
-                {/* SOCIAL PROOF TESTIMONIALS */}
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                      Junte-se a quem já está a treinar
-                    </p>
-                    <h3 className="font-bold text-xl text-blue-950 mt-1">
-                      Mais de 1.247 pessoas já iniciaram este treinamento.
+                  {/* Bonus - Only Bonus 2 remains, renamed for layout clarity and clean focus */}
+                  <div className="bg-amber-50/20 p-6 rounded-2xl border border-amber-100/40 space-y-4">
+                    <h3 className="font-bold text-xs tracking-wider uppercase text-amber-900 flex items-center gap-2">
+                      <Gift className="w-4 h-4 text-amber-500 animate-bounce" />
+                      <span>Bónus Exclusivo de Hoje</span>
                     </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs space-y-2">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                        ))}
+                    <div className="bg-white p-4 rounded-xl border border-amber-100 shadow-xs space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] rounded font-extrabold uppercase tracking-wider">
+                          LIST
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-xs">
+                          Checklist de Hábitos para Mente Ativa
+                        </h4>
                       </div>
-                      <p className="text-xs text-slate-600 italic">
-                        &ldquo;Sempre achei que tinha má memória devido à idade. Mas após os primeiros 10 dias com o plano, sinto-me muito mais focado no dia a dia. Recomendo.&rdquo;
+                      <p className="text-slate-500 text-[11px] leading-relaxed">
+                        Um guia visual com pequenas rotinas diárias práticas para reconfigurar e fortalecer a sua plasticidade cognitiva de forma simples.
                       </p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">— Carlos M., 54 anos</p>
-                    </div>
-
-                    <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs space-y-2">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                        ))}
-                      </div>
-                      <p className="text-xs text-slate-600 italic">
-                        &ldquo;Excelente material prático. O checklist ajudou-me a criar o hábito ao início do dia de forma natural sem gastar muito tempo.&rdquo;
-                      </p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">— Sara T., Estudante Universitária</p>
                     </div>
                   </div>
+
                 </div>
 
-                {/* PRICE VISUALIZATION & TRIGGERS */}
-                <div className="bg-[#111827] text-white p-6 md:p-8 rounded-3xl border border-slate-800 text-center space-y-4 relative overflow-hidden">
+                {/* Guarantee & Social Proof Combined Card */}
+                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
                   
-                  {/* Spark decorative blur */}
-                  <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-
-                  <div className="space-y-1">
-                    <span className="text-[10px] tracking-wider uppercase font-extrabold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
-                      Preço Promocional Limitado
-                    </span>
-                    <p className="text-slate-400 text-xs line-through mt-2">Valor normal 9800KZ</p>
-                    <p className="font-display font-black text-4xl text-amber-400">5799KZ</p>
-                    <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Acesso imediato após confirmação de pagamento</p>
+                  {/* Guarantee Box */}
+                  <div className="flex items-start gap-3.5 pb-5 border-b border-slate-50">
+                    <ShieldCheck className="w-10 h-10 text-emerald-600 shrink-0" />
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-slate-900 text-xs md:text-sm">Garantia de Satisfação de 7 Dias</h4>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        Se por qualquer motivo considerar que as técnicas apresentadas não se adaptam ao seu perfil cognitivo, devolvemos 100% do valor pago.
+                      </p>
+                    </div>
                   </div>
 
-                  {!showCheckout ? (
-                    <button
-                      id="unlock-plan-cta-btn"
-                      onClick={() => {
-                        setShowCheckout(true);
-                        // Smooth scroll to checkout block
-                        setTimeout(() => {
-                          document.getElementById("checkout-embed-block")?.scrollIntoView({ behavior: "smooth" });
-                        }, 100);
-                      }}
-                      className="w-full max-w-xs mx-auto bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold text-base py-4 px-6 rounded-2xl hover:from-blue-500 hover:to-blue-600 active:scale-98 transition-all shadow-lg shadow-blue-500/15 flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <span>QUERO DESBLOQUEAR MEU PLANO</span>
-                      <ArrowRight className="w-4.5 h-4.5" />
-                    </button>
-                  ) : null}
+                  {/* Social Proof Mini */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex -space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 border border-white flex items-center justify-center text-[9px] font-bold text-blue-800">CM</div>
+                        <div className="w-6 h-6 rounded-full bg-amber-100 border border-white flex items-center justify-center text-[9px] font-bold text-amber-800">ST</div>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Recomendado por mais de 1.200 participantes
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-1.5">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                          ))}
+                        </div>
+                        <p className="text-slate-600 text-xs leading-normal italic">
+                          &ldquo;Sinto-me muito mais focado no dia a dia. Excelente investimento.&rdquo;
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-400">— Carlos M., 54 anos</p>
+                      </div>
+
+                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-1.5">
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                          ))}
+                        </div>
+                        <p className="text-slate-600 text-xs leading-normal italic">
+                          &ldquo;O checklist facilitou muito para fixar novos hábitos rápidos.&rdquo;
+                        </p>
+                        <p className="text-[9px] font-bold text-slate-400">— Sara T., Estudante</p>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
 
-                {/* THE INTEGRATED EMBEDDED CHECKOUT */}
-                {showCheckout && (
-                  <motion.div
-                    id="checkout-embed-block"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-slate-50 border border-slate-200 rounded-3xl p-6 md:p-8 space-y-6 max-w-md mx-auto relative scroll-mt-20"
-                  >
-                    <div className="text-center space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                        Área de Pagamento Incorporado
-                      </span>
-                      <h4 className="font-bold text-lg text-slate-900">
-                        &ldquo;Está a um passo de começar o seu plano personalizado de 30 dias.&rdquo;
-                      </h4>
-                      <p className="text-xs text-slate-500">Transação Encriptada SSL Segura de 256 bits</p>
-                    </div>
+                {/* PRICE VISUALIZATION & OUTSTANDING PREMIUM CALL TO ACTION */}
+                <div className="bg-[#0f172a] text-white p-6 md:p-8 rounded-3xl border border-slate-800 text-center space-y-6 relative overflow-hidden shadow-xl">
+                  
+                  {/* Subtle ambient lighting glows */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
-                    {/* Stander Checkout Widget */}
-                    <div className="w-full bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-                      <div
-                        className="stander-checkout"
-                        data-product="ae8d5180-a641-4036-93b7-8ba912fadb43"
-                        data-mode="inline"
-                        data-theme="light"
-                        data-primary="#0a1744"
-                        data-button-color="#0a1744"
-                        data-button-text="Comprar agora"
-                        data-radius="12"
-                        data-lang="pt"
-                      />
+                  <div className="space-y-1 relative z-10">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider uppercase font-black text-amber-400 bg-amber-400/15 px-3 py-1 rounded-full border border-amber-400/20">
+                      <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                      Acesso Vitalício em Promoção
+                    </span>
+                    <div className="pt-2">
+                      <p className="text-slate-400 text-xs line-through">De 9.800 KZ</p>
+                      <div className="flex items-baseline justify-center gap-1.5 mt-1">
+                        <span className="text-3.5xl md:text-5xl font-black text-amber-400 tracking-tight">5.799 KZ</span>
+                        <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Taxa Única</span>
+                      </div>
                     </div>
-
-                    <p className="text-[10px] text-slate-400 text-center leading-normal">
-                      O pagamento de 5799KZ é processado de forma 100% segura e encriptada pela StanderPay.
+                    <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider pt-1">
+                      Sem mensalidades • Envio imediato por e-mail
                     </p>
-                  </motion.div>
-                )}
+                  </div>
+
+                  {/* IMPROVED HIGH-CONVERTING BUTTON LINK */}
+                  <div className="relative z-10 pt-2">
+                    <a
+                      id="unlock-plan-cta-btn"
+                      href="https://standerpay.com/checkout/ae8d5180-a641-4036-93b7-8ba912fadb43"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full max-w-md mx-auto bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 text-white font-bold text-base md:text-lg py-4 px-6 rounded-2xl hover:scale-[1.01] hover:brightness-110 active:scale-[0.99] transition-all shadow-lg shadow-emerald-600/30 flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>DESBLOQUEAR O MEU PLANO AGORA</span>
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <span className="text-[10px] text-emerald-100 font-medium tracking-wide uppercase">
+                        Transação Protegida de Alta Segurança
+                      </span>
+                    </a>
+                  </div>
+
+                  {/* Security trust badges */}
+                  <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400 pt-2 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      Pagamento Seguro SSL
+                    </span>
+                    <span className="text-slate-700">•</span>
+                    <span className="flex items-center gap-1">
+                      <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
+                      Garantia Incondicional
+                    </span>
+                  </div>
+
+                </div>
 
               </motion.div>
             )}
