@@ -1,0 +1,6 @@
+{
+  "name": "Plano de Treinamento de Memória",
+  "description": "Um quiz de alta conversão interativo e moderno para o Plano de Treinamento de Memória.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
