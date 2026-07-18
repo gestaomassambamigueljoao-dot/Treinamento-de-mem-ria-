@@ -3,7 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
+    <title>Treinamento de Memória Ativa</title>
+    <!-- Preconnect & DNS prefetch for critical Wistia CDNs to eliminate lookup/handshake latency -->
+    <link rel="preconnect" href="https://fast.wistia.com" crossorigin />
+    <link rel="preconnect" href="https://fast.wistia.net" crossorigin />
+    <link rel="dns-prefetch" href="https://fast.wistia.com" />
+    <link rel="dns-prefetch" href="https://fast.wistia.net" />
+    
+    <!-- Preload critical Wistia players so they are cached and ready on quiz start -->
+    <link rel="preload" href="https://fast.wistia.com/player.js" as="script" />
+    <link rel="modulepreload" href="https://fast.wistia.com/embed/7i8ufihqb8.js" />
+
+    <!-- Load Wistia players asynchronously right from the start -->
+    <script src="https://fast.wistia.com/player.js" async></script>
+    <script src="https://fast.wistia.com/embed/7i8ufihqb8.js" async type="module"></script>
   </head>
   <body>
     <div id="root"></div>

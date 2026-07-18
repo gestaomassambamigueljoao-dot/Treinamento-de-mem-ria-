@@ -163,7 +163,7 @@ export default function App() {
 
   // Preload Wistia scripts and styles immediately on mount so they are fully ready in cache
   useEffect(() => {
-    // 1. Inject Wistia Stylesheet for non-defined custom player
+    // 1. Inject Wistia Stylesheet for non-defined custom player and popover trigger
     const styleId = "wistia-player-styles";
     let styleElement = document.getElementById(styleId);
     if (!styleElement) {
@@ -175,6 +175,99 @@ export default function App() {
           display: block;
           filter: blur(5px);
           padding-top: 100.0%;
+        }
+        .vsl-trigger-link {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 100% !important;
+          height: 100% !important;
+          min-height: 380px !important;
+          background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%) !important;
+          background-image: radial-gradient(circle at center, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.95) 100%), url('https://fast.wistia.com/embed/medias/7i8ufihqb8/swatch') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          text-decoration: none !important;
+          color: white !important;
+          text-align: center !important;
+          padding: 24px !important;
+          box-sizing: border-box !important;
+          transition: all 0.3s ease !important;
+          position: relative !important;
+          cursor: pointer !important;
+        }
+        .vsl-trigger-link:hover {
+          transform: scale(1.02) !important;
+          filter: brightness(1.1) !important;
+        }
+        .vsl-trigger-link-text {
+          font-family: 'Inter', sans-serif !important;
+          font-weight: 700 !important;
+          font-size: 20px !important;
+          line-height: 1.3 !important;
+          margin-bottom: 8px !important;
+          color: #ffffff !important;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
+          max-width: 320px !important;
+        }
+        .vsl-trigger-link-subtext {
+          font-family: 'Inter', sans-serif !important;
+          font-weight: 500 !important;
+          font-size: 14px !important;
+          color: #94a3b8 !important;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.6) !important;
+        }
+        .vsl-play-button-wrapper {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 72px !important;
+          height: 72px !important;
+          background: #ffffff !important;
+          border-radius: 50% !important;
+          margin-bottom: 24px !important;
+          box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 10px 20px rgba(0,0,0,0.3) !important;
+          transition: all 0.3s ease !important;
+          position: relative !important;
+        }
+        .vsl-trigger-link:hover .vsl-play-button-wrapper {
+          transform: scale(1.1) !important;
+          background: #2563eb !important;
+          box-shadow: 0 0 40px rgba(37, 99, 235, 0.8), 0 10px 20px rgba(0,0,0,0.4) !important;
+        }
+        .vsl-play-icon {
+          width: 0 !important;
+          height: 0 !important;
+          border-top: 12px solid transparent !important;
+          border-left: 20px solid #1e1b4b !important;
+          border-bottom: 12px solid transparent !important;
+          margin-left: 6px !important;
+          transition: all 0.3s ease !important;
+        }
+        .vsl-trigger-link:hover .vsl-play-icon {
+          border-left-color: #ffffff !important;
+        }
+        .vsl-pulse-ring {
+          position: absolute !important;
+          border: 4px solid rgba(255, 255, 255, 0.4) !important;
+          border-radius: 50% !important;
+          top: -12px !important;
+          left: -12px !important;
+          right: -12px !important;
+          bottom: -12px !important;
+          animation: vsl-pulse-anim 2s infinite !important;
+          opacity: 0 !important;
+        }
+        @keyframes vsl-pulse-anim {
+          0% {
+            transform: scale(0.95);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1.3);
+            opacity: 0;
+          }
         }
       `;
       document.head.appendChild(styleElement);
@@ -757,15 +850,18 @@ export default function App() {
                 {/* VSL Video Player Wistia Embed Box */}
                 <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 max-w-md mx-auto relative group">
                   <div 
-                    className="w-full relative bg-black rounded-3xl"
+                    className="w-full relative bg-black rounded-3xl aspect-square"
                     dangerouslySetInnerHTML={{
                       __html: `
-                        <wistia-player media-id="7i8ufihqb8" aspect="1.0" autoPlay="true" playbar="true">
-                          <div class="wistia_preload_transcript_outer_wrapper" style="width: 100%; height: 100%; display:flex; justify-content:center; align-items: center; margin-top:-100.0%;">
-                            <div class="wistia_preload_transcript_inner_wrapper" style=" overflow: auto;">
-                              <p class="wistia_preload_transcript_text" aria-hidden="true" tabindex="-1" style="text-align: justify; font-size: 5px !important;"> </p>
+                        <wistia-player media-id="7i8ufihqb8" popover-content="link" wistia-popover="true" aspect="1.0" style="display: block; width: 100%; height: 100%;">
+                          <a href="#" class="vsl-trigger-link">
+                            <div class="vsl-play-button-wrapper">
+                              <div class="vsl-pulse-ring"></div>
+                              <div class="vsl-play-icon"></div>
                             </div>
-                          </div>
+                            <div class="vsl-trigger-link-text">O seu vídeo já começou</div>
+                            <div class="vsl-trigger-link-subtext">Clique para acompanhar</div>
+                          </a>
                         </wistia-player>
                       `
                     }}
@@ -945,7 +1041,7 @@ export default function App() {
                   {/* Visual mockup styling with actual journal image */}
                   <div className="overflow-hidden rounded-2xl shadow-lg border border-slate-200/60 bg-white">
                     <img
-                      src="https://lh3.googleusercontent.com/d/1aLRPioR4FVQx2DmLmHzWmS6-wj18bzfo"
+                      src="https://lh3.googleusercontent.com/d/1bZu50wCMXnaxIF_HNlmh4LydmCtvYJUZ"
                       alt="Reportagem Estilo Jornal"
                       className="w-full h-auto object-cover hover:scale-[1.01] transition-transform duration-300"
                       referrerPolicy="no-referrer"
@@ -1077,66 +1173,54 @@ export default function App() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="space-y-8 pb-12"
+                className="space-y-6 pb-12"
               >
                 
-                {/* Title and Badge section */}
-                <div className="text-center space-y-3">
-                  <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/50 text-xs font-bold">
-                    <Award className="w-4 h-4 text-amber-500" />
-                    <span>Plano Personalizado Gerado</span>
-                  </div>
-                  <h1 className="font-bold text-2xl md:text-3xl text-blue-950 tracking-tight max-w-xl mx-auto uppercase leading-tight">
-                    Plano de Treinamento de Memória Ativa 30 Dias
-                  </h1>
-                  <p className="text-slate-500 text-xs md:text-sm max-w-lg mx-auto leading-relaxed">
-                    Desenvolvido exclusivamente com base no seu perfil de <span className="font-bold text-blue-950">&ldquo;{profile?.name}&rdquo;</span> para otimizar o seu desempenho cognitivo.
-                  </p>
-                </div>
+                {/* Main Premium Dark Card Container */}
+                <div className="bg-[#0f172a] text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden relative">
+                  
+                  {/* Glowing background highlights */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-600/5 rounded-full blur-3xl pointer-events-none" />
 
-                {/* Main Offer Card: Mockup on the Left, Core Info on the Right */}
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/50 overflow-hidden">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
-                    
-                    {/* Left side: Premium Mockup Area */}
-                    <div className="md:col-span-5 bg-slate-50 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
-                      <div className="relative max-w-[160px] md:max-w-full mx-auto overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md transition-transform hover:scale-[1.02] duration-300">
-                        <img
-                          src="https://lh3.googleusercontent.com/d/1ZgThWQIjYn04IrZ0wBlq20uTgy15yJnT"
-                          alt="Mockup do Plano de Treinamento de Memória Ativa"
-                          className="w-full h-auto object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div className="text-center mt-3">
-                        <span className="text-[10px] uppercase font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full tracking-wider">
-                          Acesso Digital Imediato
-                        </span>
-                      </div>
+                  {/* Header/Title Block inside the card */}
+                  <div className="p-6 md:p-8 text-center border-b border-slate-800/80 space-y-3.5 relative z-10">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 text-amber-400 border border-amber-400/20 text-[11px] font-extrabold uppercase tracking-wider">
+                      <Award className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Plano Personalizado Gerado</span>
                     </div>
+                    <h1 className="font-bold text-2xl md:text-3xl text-white tracking-tight max-w-xl mx-auto uppercase leading-tight">
+                      Plano de Treinamento de Memória Ativa 30 Dias
+                    </h1>
+                    <p className="text-slate-400 text-xs md:text-sm max-w-md mx-auto leading-relaxed">
+                      Desenvolvido exclusivamente com base no seu perfil de <span className="font-bold text-amber-400">&ldquo;{profile?.name}&rdquo;</span> para otimizar o seu desempenho cognitivo.
+                    </p>
+                  </div>
 
-                    {/* Right side: Summary & Included Materials */}
-                    <div className="md:col-span-7 p-6 md:p-8 flex flex-col justify-between space-y-6">
-                      <div className="space-y-3">
-                        <span className="text-[9px] uppercase font-bold text-slate-400 tracking-widest block">Treino Sob Medida</span>
-                        <h3 className="font-bold text-lg md:text-xl text-blue-950">
-                          O que está incluído no seu plano:
-                        </h3>
-                        <p className="text-slate-600 text-xs md:text-sm leading-relaxed">
+                  {/* Body Content Area */}
+                  <div className="p-6 md:p-8 space-y-6 relative z-10">
+                    
+                    {/* What is Included (organized clean list) */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Conteúdo do seu Treinamento</span>
+                      </div>
+                      
+                      <div className="bg-slate-900/60 border border-slate-800 p-5 rounded-2xl space-y-4">
+                        <p className="text-slate-300 text-xs md:text-sm leading-relaxed">
                           Uma metodologia prática passo a passo, focada em resolver exatamente as dificuldades indicadas nas suas respostas: foco rápido, memorização duradoura e mitigação de lapsos.
                         </p>
-                      </div>
-
-                      <div className="space-y-3 pt-2">
-                        <div className="space-y-2.5">
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                           {[
                             "Treinamento de memória estruturado para 30 dias",
                             "12 exercícios de alta fixação para o cotidiano",
                             "Protocolo de repetição espaçada e associação",
                             "Checklist diário de evolução cognitiva"
                           ].map((feature, fIdx) => (
-                            <div key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                              <Check className="w-4.5 h-4.5 text-emerald-600 shrink-0 mt-0.5 stroke-[2.5]" />
+                            <div key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-200">
+                              <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 stroke-[3]" />
                               <span>{feature}</span>
                             </div>
                           ))}
@@ -1144,165 +1228,162 @@ export default function App() {
                       </div>
                     </div>
 
-                  </div>
-                </div>
-
-                {/* Benefits & Bonus: Side-by-side Layout to avoid vertical scroll clutter */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  {/* Core Benefits */}
-                  <div className="bg-slate-50/60 p-6 rounded-2xl border border-slate-100 space-y-4">
-                    <h3 className="font-bold text-xs tracking-wider uppercase text-blue-950 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
-                      <span>Benefícios Principais</span>
-                    </h3>
-                    <div className="space-y-3 text-xs text-slate-700">
-                      {[
-                        "Reter informações importantes com menos esforço",
-                        "Estudar, planejar ou trabalhar com mais foco",
-                        "Reduzir a insegurança de esquecer dados na hora H",
-                        "Ganhar mais agilidade mental no dia a dia"
-                      ].map((benefit, bIdx) => (
-                        <div key={bIdx} className="flex items-center gap-2.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                          <span>{benefit}</span>
+                    {/* Benefits & Bonus: Side-by-side Layout inside the premium card */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Core Benefits */}
+                      <div className="bg-slate-900/40 p-5 rounded-xl border border-slate-800/80 space-y-3">
+                        <h3 className="font-bold text-[11px] tracking-wider uppercase text-slate-300 flex items-center gap-2">
+                          <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Benefícios Principais</span>
+                        </h3>
+                        <div className="space-y-2.5 text-xs text-slate-300">
+                          {[
+                            "Reter informações importantes com menos esforço",
+                            "Estudar, planejar ou trabalhar com mais foco",
+                            "Reduzir a insegurança de esquecer dados na hora H",
+                            "Ganhar mais agilidade mental no dia a dia"
+                          ].map((benefit, bIdx) => (
+                            <div key={bIdx} className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                              <span>{benefit}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Bonus - Only Bonus 2 remains, renamed for layout clarity and clean focus */}
-                  <div className="bg-amber-50/20 p-6 rounded-2xl border border-amber-100/40 space-y-4">
-                    <h3 className="font-bold text-xs tracking-wider uppercase text-amber-900 flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-amber-500 animate-bounce" />
-                      <span>Bónus Exclusivo de Hoje</span>
-                    </h3>
-                    <div className="bg-white p-4 rounded-xl border border-amber-100 shadow-xs space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] rounded font-extrabold uppercase tracking-wider">
-                          LIST
+                      {/* Bonus */}
+                      <div className="bg-amber-500/5 p-5 rounded-xl border border-amber-500/10 space-y-3">
+                        <h3 className="font-bold text-[11px] tracking-wider uppercase text-amber-400 flex items-center gap-2">
+                          <Gift className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                          <span>Bónus Exclusivo de Hoje</span>
+                        </h3>
+                        <div className="bg-slate-950/60 p-3.5 rounded-lg border border-amber-500/15 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 bg-amber-400/10 text-amber-400 text-[8px] rounded font-extrabold uppercase tracking-wider border border-amber-400/20">
+                              LIST
+                            </span>
+                            <h4 className="font-bold text-slate-100 text-xs">
+                              Checklist de Hábitos para Mente Ativa
+                            </h4>
+                          </div>
+                          <p className="text-slate-400 text-[10px] leading-relaxed">
+                            Um guia visual com pequenas rotinas diárias práticas para reconfigurar e fortalecer a sua plasticidade cognitiva de forma simples.
+                          </p>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Guarantee & Social Proof Segment */}
+                    <div className="pt-4 border-t border-slate-800/80 space-y-5">
+                      
+                      {/* Guarantee Box */}
+                      <div className="flex items-start gap-3 bg-slate-900/30 p-4 rounded-xl border border-slate-800">
+                        <ShieldCheck className="w-8 h-8 text-emerald-400 shrink-0 mt-0.5" />
+                        <div className="space-y-0.5 text-xs">
+                          <h4 className="font-bold text-white">Garantia de Satisfação de 7 Dias</h4>
+                          <p className="text-slate-400 leading-normal">
+                            Se por qualquer motivo considerar que as técnicas apresentadas não se adaptam ao seu perfil cognitivo, devolvemos 100% do valor pago de forma imediata.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Social Proof Mini */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 justify-center sm:justify-start">
+                          <div className="flex -space-x-1.5">
+                            <div className="w-5 h-5 rounded-full bg-blue-600/30 border border-slate-800 flex items-center justify-center text-[8px] font-bold text-blue-300">CM</div>
+                            <div className="w-5 h-5 rounded-full bg-amber-600/30 border border-slate-800 flex items-center justify-center text-[8px] font-bold text-amber-300">ST</div>
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Recomendado por mais de 1.200 participantes
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          <div className="bg-slate-900/20 p-3.5 rounded-lg border border-slate-800/60 space-y-1">
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star key={s} className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                              ))}
+                            </div>
+                            <p className="text-slate-300 text-[11px] leading-normal italic">
+                              &ldquo;Sinto-me muito mais focado no dia a dia. Excelente investimento.&rdquo;
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-500">— Carlos M., 54 anos</p>
+                          </div>
+
+                          <div className="bg-slate-900/20 p-3.5 rounded-lg border border-slate-800/60 space-y-1">
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <Star key={s} className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                              ))}
+                            </div>
+                            <p className="text-slate-300 text-[11px] leading-normal italic">
+                              &ldquo;O checklist facilitou muito para fixar novos hábitos rápidos.&rdquo;
+                            </p>
+                            <p className="text-[9px] font-bold text-slate-500">— Sara T., Estudante</p>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* PRICE VISUALIZATION & OUTSTANDING PREMIUM CALL TO ACTION */}
+                    <div className="pt-6 border-t border-slate-800/80 text-center space-y-5 relative overflow-hidden">
+                      
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center gap-1.5 text-[9px] tracking-wider uppercase font-black text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                          <Flame className="w-3 h-3 text-amber-400 animate-pulse" />
+                          Acesso Vitalício em Promoção
                         </span>
-                        <h4 className="font-bold text-slate-900 text-xs">
-                          Checklist de Hábitos para Mente Ativa
-                        </h4>
-                      </div>
-                      <p className="text-slate-500 text-[11px] leading-relaxed">
-                        Um guia visual com pequenas rotinas diárias práticas para reconfigurar e fortalecer a sua plasticidade cognitiva de forma simples.
-                      </p>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Guarantee & Social Proof Combined Card */}
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
-                  
-                  {/* Guarantee Box */}
-                  <div className="flex items-start gap-3.5 pb-5 border-b border-slate-50">
-                    <ShieldCheck className="w-10 h-10 text-emerald-600 shrink-0" />
-                    <div className="space-y-1">
-                      <h4 className="font-bold text-slate-900 text-xs md:text-sm">Garantia de Satisfação de 7 Dias</h4>
-                      <p className="text-slate-500 text-xs leading-relaxed">
-                        Se por qualquer motivo considerar que as técnicas apresentadas não se adaptam ao seu perfil cognitivo, devolvemos 100% do valor pago.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Social Proof Mini */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex -space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-100 border border-white flex items-center justify-center text-[9px] font-bold text-blue-800">CM</div>
-                        <div className="w-6 h-6 rounded-full bg-amber-100 border border-white flex items-center justify-center text-[9px] font-bold text-amber-800">ST</div>
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                        Recomendado por mais de 1.200 participantes
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-1.5">
-                        <div className="flex items-center gap-0.5">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star key={s} className="w-3 h-3 text-amber-400 fill-amber-400" />
-                          ))}
+                        <div className="pt-1.5">
+                          <p className="text-slate-400 text-xs line-through">De 9.800 KZ</p>
+                          <div className="flex items-baseline justify-center gap-1.5 mt-0.5">
+                            <span className="text-3xl md:text-4.5xl font-black text-amber-400 tracking-tight">5.799 KZ</span>
+                            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Taxa Única</span>
+                          </div>
                         </div>
-                        <p className="text-slate-600 text-xs leading-normal italic">
-                          &ldquo;Sinto-me muito mais focado no dia a dia. Excelente investimento.&rdquo;
+                        <p className="text-slate-400 text-[9px] uppercase font-bold tracking-wider pt-0.5">
+                          Sem mensalidades • Envio imediato por e-mail
                         </p>
-                        <p className="text-[9px] font-bold text-slate-400">— Carlos M., 54 anos</p>
                       </div>
 
-                      <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-1.5">
-                        <div className="flex items-center gap-0.5">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star key={s} className="w-3 h-3 text-amber-400 fill-amber-400" />
-                          ))}
-                        </div>
-                        <p className="text-slate-600 text-xs leading-normal italic">
-                          &ldquo;O checklist facilitou muito para fixar novos hábitos rápidos.&rdquo;
-                        </p>
-                        <p className="text-[9px] font-bold text-slate-400">— Sara T., Estudante</p>
+                      {/* IMPROVED HIGH-CONVERTING BUTTON LINK */}
+                      <div className="pt-1">
+                        <a
+                          id="unlock-plan-cta-btn"
+                          href="https://standerpay.com/checkout/ae8d5180-a641-4036-93b7-8ba912fadb43"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full max-w-md mx-auto bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 text-white font-bold text-sm md:text-base py-4 px-6 rounded-2xl hover:scale-[1.01] hover:brightness-110 active:scale-[0.99] transition-all shadow-lg shadow-emerald-600/30 flex flex-col items-center justify-center gap-1 group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>DESBLOQUEAR O MEU PLANO AGORA</span>
+                            <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                          <span className="text-[9px] text-emerald-100 font-medium tracking-wide uppercase">
+                            Transação Protegida de Alta Segurança
+                          </span>
+                        </a>
                       </div>
+
+                      {/* Security trust badges */}
+                      <div className="flex items-center justify-center gap-4 text-[9px] text-slate-400 pt-1 font-semibold">
+                        <span className="flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                          Pagamento Seguro SSL
+                        </span>
+                        <span className="text-slate-700">•</span>
+                        <span className="flex items-center gap-1">
+                          <RefreshCw className="w-3 h-3 text-emerald-500" />
+                          Garantia Incondicional
+                        </span>
+                      </div>
+
                     </div>
-                  </div>
 
-                </div>
-
-                {/* PRICE VISUALIZATION & OUTSTANDING PREMIUM CALL TO ACTION */}
-                <div className="bg-[#0f172a] text-white p-6 md:p-8 rounded-3xl border border-slate-800 text-center space-y-6 relative overflow-hidden shadow-xl">
-                  
-                  {/* Subtle ambient lighting glows */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-                  <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-
-                  <div className="space-y-1 relative z-10">
-                    <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider uppercase font-black text-amber-400 bg-amber-400/15 px-3 py-1 rounded-full border border-amber-400/20">
-                      <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                      Acesso Vitalício em Promoção
-                    </span>
-                    <div className="pt-2">
-                      <p className="text-slate-400 text-xs line-through">De 9.800 KZ</p>
-                      <div className="flex items-baseline justify-center gap-1.5 mt-1">
-                        <span className="text-3.5xl md:text-5xl font-black text-amber-400 tracking-tight">5.799 KZ</span>
-                        <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Taxa Única</span>
-                      </div>
-                    </div>
-                    <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider pt-1">
-                      Sem mensalidades • Envio imediato por e-mail
-                    </p>
-                  </div>
-
-                  {/* IMPROVED HIGH-CONVERTING BUTTON LINK */}
-                  <div className="relative z-10 pt-2">
-                    <a
-                      id="unlock-plan-cta-btn"
-                      href="https://standerpay.com/checkout/ae8d5180-a641-4036-93b7-8ba912fadb43"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full max-w-md mx-auto bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-700 text-white font-bold text-base md:text-lg py-4 px-6 rounded-2xl hover:scale-[1.01] hover:brightness-110 active:scale-[0.99] transition-all shadow-lg shadow-emerald-600/30 flex flex-col items-center justify-center gap-1.5 group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>DESBLOQUEAR O MEU PLANO AGORA</span>
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                      <span className="text-[10px] text-emerald-100 font-medium tracking-wide uppercase">
-                        Transação Protegida de Alta Segurança
-                      </span>
-                    </a>
-                  </div>
-
-                  {/* Security trust badges */}
-                  <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400 pt-2 font-semibold">
-                    <span className="flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                      Pagamento Seguro SSL
-                    </span>
-                    <span className="text-slate-700">•</span>
-                    <span className="flex items-center gap-1">
-                      <RefreshCw className="w-3.5 h-3.5 text-emerald-500" />
-                      Garantia Incondicional
-                    </span>
                   </div>
 
                 </div>
